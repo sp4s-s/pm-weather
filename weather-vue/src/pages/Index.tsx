@@ -6,7 +6,7 @@ import * as ScrollArea from "@radix-ui/react-scroll-area";
 import { Cloud, Thermometer, Droplet, Wind } from "lucide-react";
 
 // const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 type Location = {
   id: number;
@@ -92,112 +92,120 @@ const Index = () => {
   }, [applyTheme]);
 
   const handleSetUser = async () => {
-    const u = username.trim();
-    if (!u) return alert("Enter username");
-    try {
-      await fetch(`${API_BASE}/user`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: u }),
-      });
-      setActiveUser(u);
-      await loadLocations(u);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to set user");
-    }
-  };
+  const u = username.trim();
+  if (!u) return alert("enter username"); // same as HTML
+  try {
+    await fetch(`${API_BASE}/user`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: u }),
+    });
+    setActiveUser(u);
+    await loadLocations(u);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to set user");
+  }
+};
 
-  const loadLocations = async (u = activeUser) => {
-    if (!u) return;
-    try {
-      const res = await fetch(
-        `${API_BASE}/locations?username=${encodeURIComponent(u)}`
-      );
-      const data: Location[] = await res.json();
-      setLocations(data);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to load locations");
-    }
-  };
+const loadLocations = async (u = activeUser) => {
+  if (!u) return;
+  try {
+    const res = await fetch(
+      `${API_BASE}/locations?username=${encodeURIComponent(u)}`
+    );
+    const data: Location[] = await res.json();
+    setLocations(data);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load locations");
+  }
+};
 
-  const addLocation = async () => {
-    if (!activeUser) return alert("Set user first");
-    const z = zip.trim();
-    const la = lat.trim();
-    const lo = lon.trim();
-    if (!z && (!la || !lo)) return alert("Provide zip OR Coordinates 📍");
-    if (z && (la || lo)) return alert("Only one type allowed");
-    try {
-      await fetch(`${API_BASE}/location`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: activeUser,
-          zip: z || null,
-          lat: la || null,
-          lon: lo || null,
-        }),
-      });
-      setZip("");
-      setLat("");
-      setLon("");
-      await loadLocations();
-    } catch (e) {
-      console.error(e);
-      alert("Failed to add location");
-    }
-  };
+const addLocation = async () => {
+  if (!activeUser) return alert("Set user first");
+  const z = zip.trim();
+  const la = lat.trim();
+  const lo = lon.trim();
 
-  const deleteLocation = async (id: number) => {
-    try {
-      await fetch(`${API_BASE}/location/${id}`, { method: "DELETE" });
-      await loadLocations();
-    } catch (e) {
-      console.error(e);
-      alert("Failed to delete");
-    }
-  };
+  if (!z && (!la || !lo)) return alert("Provide zip OR both lat/lon");
+  if (z && (la || lo)) return alert("Only one type allowed");
 
-  const updateLocation = async (id: number) => {
-    const newZip =
-      window.prompt("New zip (leave blank for lat/lon update)") || "";
-    const la = newZip ? null : window.prompt("New lat") || "";
-    const lo = newZip ? null : window.prompt("New lon") || "";
-    if (!newZip && (!la || !lo)) return alert("Provide zip OR Coordinates 📍");
-    if (newZip && (la || lo)) return alert("Only one type allowed");
-    try {
-      await fetch(`${API_BASE}/location/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          zip: newZip || null,
-          lat: la || null,
-          lon: lo || null,
-        }),
-      });
-      await loadLocations();
-    } catch (e) {
-      console.error(e);
-      alert("Failed to update");
-    }
-  };
+  try {
+    await fetch(`${API_BASE}/location`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: activeUser,
+        zip: z || null,
+        lat: la || null,
+        lon: lo || null,
+      }),
+    });
+    setZip("");
+    setLat("");
+    setLon("");
+    await loadLocations();
+  } catch (err) {
+    console.error(err);
+    alert("Failed to add location");
+  }
+};
 
-  const refreshWeather = async () => {
-    if (!activeUser) return alert("Set user first");
-    try {
-      const res = await fetch(
-        `${API_BASE}/weather?username=${encodeURIComponent(activeUser)}`
-      );
-      const data: WeatherEntry[] = await res.json();
-      setWeather(data);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to fetch weather");
-    }
-  };
+const deleteLocation = async (id: number) => {
+  try {
+    await fetch(`${API_BASE}/location/${id}`, { method: "DELETE" });
+    await loadLocations();
+  } catch (err) {
+    console.error(err);
+    alert("Failed to delete");
+  }
+};
 
+const updateLocation = async (id: number) => {
+  const zipVal = prompt("New zip (leave blank for lat/lon update)") || "";
+  const la = zipVal ? null : prompt("New lat") || "";
+  const lo = zipVal ? null : prompt("New lon") || "";
+
+  if (!zipVal && (!la || !lo)) return alert("Provide zip OR both lat/lon");
+  if (zipVal && (la || lo)) return alert("Only one type allowed");
+
+  try {
+    await fetch(`${API_BASE}/location/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        zip: zipVal || null,
+        lat: la || null,
+        lon: lo || null,
+      }),
+    });
+    await loadLocations();
+  } catch (err) {
+    console.error(err);
+    alert("Failed to update");
+  }
+};
+
+const refreshWeather = async () => {
+  if (!activeUser) return alert("Set user first");
+  try {
+    const res = await fetch(
+      `${API_BASE}/weather?username=${encodeURIComponent(activeUser)}`
+    );
+    const data: WeatherEntry[] = await res.json();
+    setWeather(data);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to fetch weather");
+  }
+};
+
+
+
+
+
+  
   const handleParseGmaps = () => {
     const parsed = parseLatLonFromGoogleMapsUrl(gmapsUrl);
     if (!parsed) return alert("Could not parse coordinates from link");
